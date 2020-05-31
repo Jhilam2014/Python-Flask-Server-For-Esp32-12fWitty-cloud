@@ -1,0 +1,4 @@
+flask
+ConfigParser
+matplotlib
+csv

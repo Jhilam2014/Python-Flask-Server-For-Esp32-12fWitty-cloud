@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html  lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <!-- Bootstraps Java Scipts Links -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+  
+    <!-- JQuery links  -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    <!--High CHART LIVE  -->
+    <script src="https://cdn.plot.ly/plotly-1.54.1.min.js"></script>
+
+
+</head>
+
+<body>
+    <div class="navbar"><span>Data Visualization</span><button type="button" class="btn btn-primary" id='download'>Download</button></div>
+    <div style="width: 6rem; height: 34px;font-size: 33px ;position: relative;left: 80px;" ><h3>Pattern</h3></div>
+    <div class="badge badge-dark text-wrap" style="width: 6rem; height: 50px;font-size: 33px ;position: relative;left: 80px;" id="type">
+        
+    </div>
+    <div class="wrapper">
+        <div id="chart"></div>
+        <script>
+            var allData = [];
+            function getdata(){
+                var x;
+                var y;
+                var z;
+                $.ajax({
+                    type: 'GET',
+                    url: '/api/gyro',
+                    dataType: 'json',
+                    async: false,
+                    success: function(d){
+                        x = d['Status'][0];
+                        y = d['Status'][1];
+                        z = d['Status'][2];
+                        ty= d['Type']
+                    }
+                });
+                return [x,y,z,ty];
+            }
+            function trace(){
+                gData = getdata();
+                var trX = {
+                    y :  gData[0],
+                    type: 'line'
+                }; 
+                var trY = {
+                    y :  gData[1],
+                    type: 'line'
+                };
+                var trZ = {
+                    y :  gData[2],
+                    type: 'line'
+                };
+                return [trX,trY,trZ]
+            }
+            
+            
+            cl = trace()
+            data = [cl[0],cl[1],cl[2]];
+            Plotly.newPlot('chart',data);
+            var count = 0;
+            setInterval(function(){
+                gtData = getdata();
+                Plotly.extendTraces('chart',{ y:[gtData[0],gtData[1],gtData[2]] },[0,1,2]);
+                allData.push(["Gx",gtData[0],"\nGy",gtData[1],"\nGz",gtData[2]])
+                count = count+24;
+                if (count>600){
+                    Plotly.relayout('chart',{
+                        xaxis: {
+                            range: [count-600,count]
+                        }
+                    })
+                }
+                $('#type')[0].textContent = String(gtData[3]);
+            },500);
+            
+            $(document).on('click','#download', function(){
+                let csvContent = "data:text/csv;charset=utf-8," + allData.map(e => e.join(",")).join("\n");
+                var encodedUri = encodeURI(csvContent);
+                var link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "data"+String(new Date())+".csv");
+                document.body.appendChild(link); 
+                link.click();
+            });
+
+            
+        </script>
+    </div>
+
+</body>
+</html>
